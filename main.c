@@ -2,6 +2,7 @@
 #include "utils/ray.h"
 #include "utils/color.h"
 #include "utils/sphere.h"
+#include "utils/hittable.h"
 #include "utils/hittable_list.h"
 #include "utils/camera.h"
 #include "utils/utility.h"
