@@ -15,8 +15,8 @@ typedef struct {
 } hittable;
 
 typedef struct {
-	hittable objects[50];
 	int current_index;
+	hittable objects[500];
 } hittable_list;
 
 

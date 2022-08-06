@@ -109,39 +109,47 @@ static inline struct vec unit_vector(struct vec v){
 	return mdiv(v, length(v));
 }
 
-static inline vec3 random_vec() {
+static inline struct vec random_vec() {
         return v3(random_double(), random_double(), random_double());
 }
 
-static inline vec3 random_vec_mm(double min, double max) {
+static inline struct vec random_vec_mm(double min, double max) {
         return v3(random_double_mm(min, max), random_double_mm(min, max), random_double_mm(min, max));
 }
 
-static inline vec3 random_in_unit_sphere() {
+static inline struct vec random_in_unit_sphere() {
 	while(true) {
-		vec3 p = random_vec_mm(-1, 1);
+		struct vec p = random_vec_mm(-1, 1);
 		if(length_squared(p) >= 1) continue;
 		return p;
 	}
 
 }
-static inline vec3 random_unit_vector() {
+static inline struct vec random_unit_vector() {
 	return unit_vector(random_vec());
 }
 
-static inline bool near_zero(vec3 v) {
+static inline struct vec random_in_unit_disk() {
+	while(true) {
+		struct vec p = v3(random_double_mm(-1, 1), random_double_mm(-1, 1), 0);
+		if(length_squared(p) >= 1) continue;
+		return p;
+	}
+}
+
+static inline bool near_zero(struct vec v) {
 	double s = 1e-8;
 	return (fabs(v.x) < s) && (fabs(v.y) < s) && (fabs(v.z) < s);
 }
 
-static inline vec3 reflect(vec3 v, vec3 n) {
+static inline struct vec reflect(struct vec v, struct vec n) {
 	return sub(v, scale(n, dot(v, n) * 2));
 }
 
-static inline vec3 refract(const vec3 uv, const vec3 n, double etai_over_etat) {
+static inline struct vec refract(const struct vec uv, const struct vec n, double etai_over_etat) {
 	double cost_theta = fmin(dot(negate(uv), n), 1);
-	vec3 r_out_perp = scale(add(uv, scale(n, cost_theta)), etai_over_etat);
-	vec3 r_out_parallel = scale(n, -sqrt(fabs(1 - length_squared(r_out_perp))));
+	struct vec r_out_perp = scale(add(uv, scale(n, cost_theta)), etai_over_etat);
+	struct vec r_out_parallel = scale(n, -sqrt(fabs(1 - length_squared(r_out_perp))));
 	return add(r_out_perp, r_out_parallel);
 }
 #endif

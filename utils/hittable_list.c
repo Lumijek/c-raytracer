@@ -16,10 +16,7 @@ static inline void clear(hittable_list *world){
 }
 
 void add_obj(hittable_list *world, hittable object) {
-	switch(object.type) {
-		case SPHERE:
-			world->objects[world->current_index++] = object;
-	}
+	world->objects[world->current_index++] = object;
 }
 
 bool hit(const hittable_list *world, const ray *r, double t_min, double t_max, hit_record *rec){
