@@ -125,4 +125,23 @@ static inline vec3 random_in_unit_sphere() {
 	}
 
 }
+static inline vec3 random_unit_vector() {
+	return unit_vector(random_vec());
+}
+
+static inline bool near_zero(vec3 v) {
+	double s = 1e-8;
+	return (fabs(v.x) < s) && (fabs(v.y) < s) && (fabs(v.z) < s);
+}
+
+static inline vec3 reflect(vec3 v, vec3 n) {
+	return sub(v, scale(n, dot(v, n) * 2));
+}
+
+static inline vec3 refract(const vec3 uv, const vec3 n, double etai_over_etat) {
+	double cost_theta = fmin(dot(negate(uv), n), 1);
+	vec3 r_out_perp = scale(add(uv, scale(n, cost_theta)), etai_over_etat);
+	vec3 r_out_parallel = scale(n, -sqrt(fabs(1 - length_squared(r_out_perp))));
+	return add(r_out_perp, r_out_parallel);
+}
 #endif

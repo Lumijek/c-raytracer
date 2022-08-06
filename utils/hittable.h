@@ -2,19 +2,20 @@
 #define HITTABLE_H
 
 #include "ray.h"
-#include "vec3.h"
+#include "material.h"
 #include <stdbool.h>
 
-typedef struct {
+struct material;
+typedef struct hit_record{
 	point3 p;
 	vec3 normal;
+	struct material* mat_ptr;
 	double t;
 	bool front_face;
 
 } hit_record;
 
-static inline void set_face_normal(hit_record *rec, const ray *r, vec3 outward_normal) {
-	rec->front_face = (dot(r->direction, outward_normal) < 0);
-	rec->normal = rec->front_face ? outward_normal : negate(outward_normal);
-}
+void set_face_normal(hit_record *rec, const ray *r, vec3 outward_normal);
+
+
 #endif
