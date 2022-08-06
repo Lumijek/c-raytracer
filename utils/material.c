@@ -56,3 +56,22 @@ bool scatter(material *mat, const ray* r_in, const struct hit_record *rec, color
 	}
 	return false;
 }
+
+material *initialize_lambertian(color albedo) {
+	material *mat = (material *)malloc(sizeof(material));
+	mat->type = LAMBERTIAN;
+	mat->lam = (lambertian) {albedo};
+	return mat;
+}
+material *initialize_metal(color albedo, double fuzz) {
+	material *mat = (material *) malloc(sizeof(material));
+	mat->type = METAL;
+	mat->m = (metal) {albedo, fuzz};
+	return mat;
+}
+material *initialize_dielectric(double ir) {
+	material *mat = (material *) malloc(sizeof(material));
+	mat->type = DIELECTRIC;
+	mat->d = (dielectric) {ir};
+	return mat;
+}

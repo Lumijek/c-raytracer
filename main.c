@@ -42,19 +42,41 @@ color ray_color(const ray* r, const hittable_list *world, int depth){
 
 void random_scene(hittable_list *world) {
 	world->current_index = 0;
+	material *ground_material = initialize_lambertian(col(0.5, 0.5, 0.5));
+	add_obj(world, (hittable) {.type = SPHERE, .s = (sphere){p3(0.0, -1000, 0), 1000, ground_material}});
+	for(int a = -11; a < 11; a++) {
+		for(int b = -11; b < 11; b++) {
+			double choose_mat = random_double();
+			point3 center = p3(a + 0.9 * random_double(), 0.2, b + 0.9 * random_double());
+			if (length(sub(center, p3(4, 0.2, 0)))> 0.9) {
+				material *sphere_material;
+				if (choose_mat < 0.8) {
+					color albedo = mul(random_vec(), random_vec());
+					sphere_material = initialize_lambertian(albedo);
+					add_obj(world, (hittable) {.type = SPHERE, .s = (sphere){center, 0.2, sphere_material}});
+				}
+				else if (choose_mat < 0.95){
+					color albedo = random_vec_mm(0.5, 0.1);
+					double fuzz = random_double_mm(0, 0.5);
+					sphere_material = initialize_metal(albedo, fuzz);
+					add_obj(world, (hittable) {.type = SPHERE, .s = (sphere){center, 0.2, sphere_material}});
+				}
+				else {
+					sphere_material = initialize_dielectric(1.5);
+					add_obj(world, (hittable) {.type = SPHERE, .s = (sphere){center, 0.2, sphere_material}});				
+				}
+			}
+		}
+	}
 	
+	material *material1 = initialize_dielectric(1.5);
+	add_obj(world, (hittable) {.type = SPHERE, .s = (sphere){p3(0, 1, 0), 1.0, material1}});
 
-	material ground_material = (material) {LAMBERTIAN, .lam = col(0.5, 0.5, 0.5)};
-	add_obj(world, (hittable) {.type = SPHERE, .s = (sphere){p3(0.0, -1000, 0), 1000, &ground_material}});
-	
-	material material1 = (material) {DIELECTRIC, .d = 1.5};
-	add_obj(world, (hittable) {.type = SPHERE, .s = (sphere){p3(0, 1, 0), 1.0, &material1}});
+	material *material2 = initialize_lambertian(col(0.4, 0.2, 0.1));
+	add_obj(world, (hittable) {.type = SPHERE, .s = (sphere){p3(-4, 1, 0), 1.0, material2}});
 
-	material material2 = (material) {LAMBERTIAN, .lam = col(0.4, 0.2, 0.1)};
-	add_obj(world, (hittable) {.type = SPHERE, .s = (sphere){p3(-4, 1, 0), 1.0, &material2}});
-
-	material material3 = (material) {METAL, .m = {(color){0.7, 0.6, 0.5}, 0.0}};
-	add_obj(world, (hittable) {.type = SPHERE, .s = (sphere){p3(4, 1, 0), 1.0, &material3}});
+	material *material3 = initialize_metal(col(0.7, 0.6, 0.5), 0.0);
+	add_obj(world, (hittable) {.type = SPHERE, .s = (sphere){p3(4, 1, 0), 1.0, material3}});
 
 }
 int main() {
@@ -62,10 +84,10 @@ int main() {
 	// Image
 
 	const float aspect_ratio = 3.0 / 2.0;
-	const int image_width = 400;
+	const int image_width = 1200;
 	const int image_height = (int) (image_width / aspect_ratio);
-	const int samples_per_pixel = 40;
-	const int max_depth = 50;
+	const int samples_per_pixel = 2;
+	const int max_depth = 8;
 
 	// World
 	hittable_list world;
