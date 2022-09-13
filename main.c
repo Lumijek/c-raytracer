@@ -1,4 +1,4 @@
-#include "utils/vec3.h"
+#include "utils/mvec3.h"
 #include "utils/ray.h"
 #include "utils/color.h"
 #include "utils/sphere.h"
@@ -10,17 +10,46 @@
 #include "utils/material.h"
 #include "utils/material_types.h"
 
+
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb/stb_image.h>
+#include <stb/stb_image_write.h>
+#include <cglm/cglm.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdbool.h>
 #include <math.h>
+#include <unistd.h>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include "gfx/shader.h"
 
-typedef struct pixel{
-	int r;
-	int g;
-	int b;
+void ErrorCallback(int i,
+    const char * err_str) {
+    printf("GLFW Error: %s\n", err_str);
+}
 
-} pixel;
+void framebuffer_size_callback(GLFWwindow * window, int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	static bool wireframe = false;
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, GL_TRUE);
+    }
+    if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
+    	if(!wireframe) {
+    		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    	}
+    	else {
+    		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    	}
+    	wireframe = !wireframe;
+    }
+}
 color ray_color(const ray* r, const hittable_list *world, int depth){
 	hit_record rec;
 
@@ -35,7 +64,7 @@ color ray_color(const ray* r, const hittable_list *world, int depth){
 		}
 		return (color){0, 0, 0};
 	}
-	vec3 unit_direction = unit_vector(r->direction);
+	mvec3 unit_direction = unit_vector(r->direction);
 	double t = 0.5 * (unit_direction.y + 1.0);
 	return add(scale(col(1.0, 1.0, 1.0), (1.0 - t)), scale(col(0.5, 0.7, 1.0), t));
 }
@@ -82,32 +111,101 @@ void random_scene(hittable_list *world) {
 int main() {
 
 	// Image
-
+    glfwSetErrorCallback(ErrorCallback);
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    #ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    #endif
 	const float aspect_ratio = 3.0 / 2.0;
-	const int image_width = 1200;
+	const int image_width = 800;
 	const int image_height = (int) (image_width / aspect_ratio);
-	const int samples_per_pixel = 500;
+	const int samples_per_pixel = 20;
 	const int max_depth = 50;
+    GLFWwindow * window = glfwCreateWindow(image_width, image_height, "LearnOpenGL", NULL, NULL);
+    if (window == NULL) {
+        printf("Failed to create GLFW window!\n");
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        printf("Failed to initialize GLAD!\n");
+        return -1;
+    }
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetKeyCallback(window, key_callback);
 
+	float vertices[] = {
+     1.0f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,  // top right
+     1.0f, -1.0f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,  // bottom right
+    -1.0f, -1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,  // bottom left
+    -1.0f,  1.0f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f   // top left
+	};
+    unsigned int indices[] = {
+	    0, 1, 3,
+        1, 2, 3
+	};
+	shader *s = malloc(sizeof(shader));
+    char *vertexShaderFile = "shaders/shader.vs";
+    char *fragmentShaderFile = "shaders/shader.fs";
+    create_shader(s, vertexShaderFile, fragmentShaderFile);
+    unsigned int VAO, VBO, EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, & VBO);
+    glGenBuffers(1, &EBO);
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
+    glEnableVertexAttribArray(1);
+    stbi_set_flip_vertically_on_load(true);
+    GLubyte *checkImage = malloc(image_width * image_height * 3 * sizeof(GLubyte));
+    int cp = 0;
+    int c = 0;
+    for (int i = 0; i < image_width; i++) {
+      for (int j = 0; j < image_height; j++) {
+        checkImage[cp++] = c;
+        checkImage[cp++] = c;
+        checkImage[cp++] = c;
+      }
+    }
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_width, image_height, 0, GL_RGB, GL_UNSIGNED_BYTE, checkImage);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    
 	// World
 	hittable_list world;
 	random_scene(&world);
 
 	// Camera
-
 	camera cam;
 
 	point3 lookfrom = p3(13, 2, 3);
 	point3 lookat = p3(0, 0, 0);
-	vec3 vup = v3(0, 1, 0);
+	mvec3 vup = v3(0, 1, 0);
 	double dist_to_focus = 10.0;
 	double aperture = 0.1;
 	setup_camera(&cam, lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
-
-	clock_t begin = clock();
 	printf("P3\n%d %d\n255\n", image_width, image_height);
 
-	for(int j = image_height - 1; j >= 0; j--) {
+	clock_t begin = clock();
+	int cpointer;
+	for(int j = image_height; j >= 0; j--) {
 		fprintf(stderr, "%d iterations remaining!\n", j);
 		for(int i = 0; i < image_width; i++) {
 			color pixel_color = col(0, 0, 0);
@@ -117,9 +215,31 @@ int main() {
 				ray r = get_ray(&cam, u, v);
 				iadd(&pixel_color, ray_color(&r, &world, max_depth));
 			}
-			write_color(pixel_color, samples_per_pixel);
+  			
+			color out = write_color(pixel_color, samples_per_pixel);
+			checkImage[cpointer++] = (int)out.x;
+			checkImage[cpointer++] = (int)out.y;
+			checkImage[cpointer++] = (int)out.z;
 		}
+		glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_width, image_height, 0, GL_RGB, GL_UNSIGNED_BYTE, checkImage);
+        useShader(s);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+		glfwSwapBuffers(window);
+        glfwPollEvents();
+        //getchar();
 	}
 	clock_t end = clock();
 	fprintf(stderr, "Time spent: %f seconds!\n", (double)(end - begin) / CLOCKS_PER_SEC);
+	while (!glfwWindowShouldClose(window)) {
+		glfwSwapBuffers(window);
+        glfwPollEvents();
+	}
+	glfwTerminate();
+
 }

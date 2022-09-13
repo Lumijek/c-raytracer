@@ -8,14 +8,14 @@
 struct material;
 typedef struct hit_record{
 	point3 p;
-	vec3 normal;
+	mvec3 normal;
 	struct material* mat_ptr;
 	double t;
 	bool front_face;
 
 } hit_record;
 
-void set_face_normal(hit_record *rec, const ray *r, vec3 outward_normal);
+void set_face_normal(hit_record *rec, const ray *r, mvec3 outward_normal);
 
 
 #endif

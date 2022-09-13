@@ -2,7 +2,7 @@
 #define SPHERE_H
 
 #include "hittable.h"
-#include "vec3.h"
+#include "mvec3.h"
 #include "material.h"
 
 typedef struct s sphere;

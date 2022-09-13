@@ -1,12 +1,12 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "vec3.h"
+#include "mvec3.h"
 #include "ray.h"
 typedef struct {
 	point3 lookfrom;
 	point3 lookat;
-	vec3 vup;
+	mvec3 vup;
 	double vfov;
 	float aspect_ratio;
 	double aperture;
@@ -14,15 +14,15 @@ typedef struct {
 	float viewport_height;
 	float viewport_width;
 	double len_radius;
-	vec3 u, v, w;
+	mvec3 u, v, w;
 
 	point3 origin;
-	vec3 horizontal;
-	vec3 vertical;
-	vec3 lower_left_corner;
+	mvec3 horizontal;
+	mvec3 vertical;
+	mvec3 lower_left_corner;
 } camera;
 
-void setup_camera(camera *cam, point3 lookfrom_t, point3 lookat_t, vec3 vup_t, double vfov_t, double aspect_ratio_t, double aperture_t, double focus_dist_t) {
+void setup_camera(camera *cam, point3 lookfrom_t, point3 lookat_t, mvec3 vup_t, double vfov_t, double aspect_ratio_t, double aperture_t, double focus_dist_t) {
 	cam->lookfrom = lookfrom_t;
 	cam->lookat = lookat_t;
 	cam->vup = vup_t;
@@ -48,9 +48,9 @@ void setup_camera(camera *cam, point3 lookfrom_t, point3 lookat_t, vec3 vup_t, d
 }
 
 ray get_ray(camera *cam, double s, double t) {
-	vec3 rd = scale(random_in_unit_disk(), cam->len_radius);
-	vec3 offset = add(scale(cam->u, rd.x), scale(cam->v, rd.y));
-	vec3 dir = add(add(cam->lower_left_corner, scale(cam->horizontal, s)), scale(cam->vertical, t));
+	mvec3 rd = scale(random_in_unit_disk(), cam->len_radius);
+	mvec3 offset = add(scale(cam->u, rd.x), scale(cam->v, rd.y));
+	mvec3 dir = add(add(cam->lower_left_corner, scale(cam->horizontal, s)), scale(cam->vertical, t));
 	ray r = {.origin = add(cam->origin, offset), .direction = sub(sub(dir, cam->origin), offset)};
 	return r;
 

@@ -6,7 +6,7 @@ static double reflectance(double cosine, double ref_idx) {
 	return r0 + (1-r0)*pow((1-cosine), 5);
 }
 bool lambertian_scatter(lambertian lam, const ray* r_in, const struct hit_record* rec, color* attenuation, ray* scattered) {
-	vec3 scatter_direction = add(rec->normal, random_unit_vector());
+	mvec3 scatter_direction = add(rec->normal, random_unit_vector());
 	if (near_zero(scatter_direction)) {
 		scatter_direction = rec->normal;
 	}
@@ -16,7 +16,7 @@ bool lambertian_scatter(lambertian lam, const ray* r_in, const struct hit_record
 }
 
 bool metal_scatter(metal m, const ray* r_in, const struct hit_record *rec, color *attenuation, ray* scattered) {
-	vec3 reflected = reflect(unit_vector(r_in->direction), rec->normal);
+	mvec3 reflected = reflect(unit_vector(r_in->direction), rec->normal);
 	*scattered = (ray){rec->p, add(reflected, scale(random_in_unit_sphere(), m.fuzz))};
 	*attenuation = m.albedo;
 	return (dot(scattered->direction, rec->normal) > 0);
@@ -26,12 +26,12 @@ bool dielectric_scatter(dielectric d, const ray* r_in, const struct hit_record *
 	*attenuation = (color) {1.0, 1.0, 1.0};
 	double refraction_ratio = rec->front_face ? (1.0 / d.ir) : d.ir;
 
-	vec3 unit_direction = unit_vector(r_in->direction);
+	mvec3 unit_direction = unit_vector(r_in->direction);
 	double cos_theta = fmin(dot(negate(unit_direction), rec->normal), 1.0);
 	double sin_theta = sqrt(1.0 - cos_theta * cos_theta);
 
 	bool cannot_refract = refraction_ratio * sin_theta > 1.0;
-	vec3 direction;
+	mvec3 direction;
 
 	if (cannot_refract || reflectance(cos_theta, refraction_ratio) > random_double()) {
 		direction = reflect(unit_direction, rec->normal);
