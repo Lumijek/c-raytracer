@@ -7,4 +7,4 @@ To run go to the root directory and type:
 `
 
 ... It does look horrible to type however I couldn't get cmake working with the optimization flags and it became very slow. Will update if I can make it work.
-Then run the program with `./main > image.ppm` to generate an image of the scene. You can also view the image creation realtime in opengl(After like 3 hours of dumb bug fixing)'
+Run the program with `./main > image.ppm` to generate an image of the scene. You can also view the image creation realtime in opengl(After like 3 hours of dumb bug fixing)'
